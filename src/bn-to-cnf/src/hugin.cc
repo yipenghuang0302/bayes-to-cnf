@@ -5,7 +5,7 @@ using namespace std;
 using namespace HUGIN;
 
 hugin::hugin(){
-    input.add_delimiters(standard_delimiter, 3, '=', ';', ',');
+    input.add_delimiters(standard_delimiter, 2, '=', ';', ',');
     input.add_delimiters(ignore_delimiter, 3, ' ', '\t', '\n', '\r');
     input.add_delimiters(string_scope_delimiter, 1, '"', '"');
     input.add_delimiters(scope_delimiter, 2, '{', '}', '(', ')');
@@ -263,8 +263,12 @@ bayesnet* hugin::get_bayesnet(){
                 if (n == NULL)
                     throw hugin_error("node '%s' not found to store CPT", words[0].c_str());
 
-                for (unsigned int i = 0; i < attr->value.value.size(); i++)
-                    n->cpt.push_back(atof(attr->value.value[i].c_str()));
+                for (unsigned int i = 0; i < attr->value.value.size(); i++) {
+                  std::istringstream is('(' + attr->value.value[i] + ')');
+                  probability_t c;
+                  is >> c;
+                  n->cpt.push_back(c);
+                }
 
             } else throw hugin_error("node type unknown");
         }
@@ -286,4 +290,3 @@ bayesnet* hugin::get_bayesnet(){
 
     return bn;
 }
-
