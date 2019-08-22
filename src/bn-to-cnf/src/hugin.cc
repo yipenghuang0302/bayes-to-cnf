@@ -264,10 +264,10 @@ bayesnet* hugin::get_bayesnet(){
                     throw hugin_error("node '%s' not found to store CPT", words[0].c_str());
 
                 for (unsigned int i = 0; i < attr->value.value.size(); i++) {
-                  std::istringstream is('(' + attr->value.value[i] + ')');
-                  probability_t c;
-                  is >> c;
-                  n->cpt.push_back(c);
+                    std::istringstream is('(' + attr->value.value[i] + ')');
+                    probability_t c;
+                    is >> c;
+                    n->cpt.push_back(c);
                 }
 
             } else throw hugin_error("node type unknown");
