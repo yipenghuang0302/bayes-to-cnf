@@ -333,38 +333,113 @@ int cnf::write(const char* outfile, int i){
         unsigned int counter = 0;
         for(unsigned int i = 0; i < expr.clauses.size(); i++){
             probability_t p = get_probability(i,expr);
-            if(!OPT_SYMPLIFY || p != 1)
+            if(!OPT_SYMPLIFY || p != 1.0)
                 counter++;
         }
 
         fprintf(file, "p cnf %u %u\n", expr.LITERALS+expr.WEIGHTS, counter);
         for(unsigned int i = 0; i < expr.clauses.size(); i++){
-            if(!OPT_SYMPLIFY || get_probability(i,expr) != 1){
+            if(!OPT_SYMPLIFY || get_probability(i,expr) != 1.0){
                 clause &c = expr.clauses[i];
                 for(unsigned int j = 0; j < c.literals.size(); j++)
                     fprintf(file, "%d ", c.literals[j]);
 
-                if(get_probability(i,expr) != -1 && (!OPT_SYMPLIFY || get_probability(i,expr) != 0))
+                if(get_probability(i,expr) != ((double)NOT_WEIGHTED) && (!OPT_SYMPLIFY || get_probability(i,expr) != 0.0)) {
                     fprintf(file, "%u ", expr.LITERALS+1+c.w);
+                }
 
                 fprintf(file,"0\n");
             }
         }
 
         fprintf(file, "c ===================================================\n");
-        //fprintf(file, "c clauses       : %-6u\n", expr.clauses.size());
-        //fprintf(file, "c literals      : %-6u (1-%u)\n", expr.LITERALS,expr.LITERALS);
-        //fprintf(file, "c probabilities : %-6u (%u-%u)\n", weight_to_probability.size(), expr.LITERALS+1, expr.LITERALS+weight_to_probability.size());
+        fprintf(file, "c Following is the literal map:\n");
+        fprintf(file, "c\n");
+        fprintf(file, "cc$K$ALWAYS_SUM\n");
+        fprintf(file, "cc$S$NORMAL\n");
+        fprintf(file, "cc$N$%u\n", expr.LITERALS+expr.WEIGHTS);
+        if(bn){
+            fprintf(file, "cc$v$%u\n", expr.get_nr_variables());
+            for(unsigned int v = 0; v < expr.get_nr_variables(); v++){
+                unsigned int old_variable = v;
+                if(expr.is_mapped())
+                    old_variable = expr.variable_to_variable_map[v];
+                fprintf(file, "cc$V$%s$%u\n", bn->get_node_name(old_variable).c_str(), expr.values[v]);
+                for(unsigned int l = 0; l < expr.values[v]; l++) {
+                    if(OPT_BOOL && expr.values[v] == 2) {
+                        fprintf(
+                            file,
+                            "cc$I$-%u$1.0$+$%s$%u\n",
+                            expr.variable_to_literal[v]+l,
+                            bn->get_node_name(old_variable).c_str(),
+                            0
+                        );
+                        fprintf(
+                            file,
+                            "cc$I$%u$1.0$+$%s$%u\n",
+                            expr.variable_to_literal[v]+l,
+                            bn->get_node_name(old_variable).c_str(),
+                            1
+                        );
+                        break;
+                    } else {
+                        fprintf(file, "cc$C$-%u$1.0$+$\n",expr.variable_to_literal[v]+l);
+                        fprintf(
+                            file,
+                            "cc$I$%u$1.0$+$%s$%u\n",
+                            expr.variable_to_literal[v]+l,
+                            bn->get_node_name(old_variable).c_str(),
+                            l
+                        );
+                    }
+                }
+            }
+        }
+        // cc$t$2
+        // cc$T$q1n$2
+        if(expr.is_mapped()){
+            for(unsigned int i = 0; i < expr.weight_to_weight_map.size(); i++) {
+                fprintf(file, "cc$C$-%u$1.0$+$\n", expr.LITERALS+1+i);
+                double real = get_probability(expr.weight_to_weight_map[i]).real();
+                double imag = get_probability(expr.weight_to_weight_map[i]).imag();
+                if ( abs(real)>256 && imag==0 ) { // if it's a hash value
+                    fprintf(file, "cc$C$%u$%d$+$\n", expr.LITERALS+1+i, int(real));
+                } else {
+                    fprintf(file, "cc$C$%u$%f+%fi$+$\n", expr.LITERALS+1+i, real, imag);
+                }
+            }
+        } else {
+            for(unsigned int i = 0; i < weight_to_probability.size(); i++) {
+                fprintf(file, "cc$C$-%u$1.0$+$\n", expr.LITERALS+1+i);
+                double real = weight_to_probability[i].real();
+                double imag = weight_to_probability[i].imag();
+                if ( abs(real)>256 && imag==0 ) { // if it's a hash value
+                    fprintf(file, "cc$C$%u$%d$+$\n", expr.LITERALS+1+i, int(real));
+                } else {
+                    fprintf(file, "cc$C$%u$%f+%fi$+$\n", expr.LITERALS+1+i, real, imag);
+                }
+            }
+        }
+
+        fprintf(file, "c clauses       : %-6u\n", expr.clauses.size());
+        fprintf(file, "c literals      : %-6u (1-%u)\n", expr.LITERALS,expr.LITERALS);
+        fprintf(file, "c probabilities : %-6u (%u-%u)\n", weight_to_probability.size(), expr.LITERALS+1, expr.LITERALS+weight_to_probability.size());
         fprintf(file, "c\n");
         fprintf(file, "c literal-to-real-weight mapping:\n");
         fprintf(file, "c     1-%u = 1\n",expr.LITERALS);
 
         if(expr.is_mapped()){
             for(unsigned int i = 0; i < expr.weight_to_weight_map.size(); i++)
-                fprintf(file, "c     %u = %f\n", expr.LITERALS+1+i, get_probability(expr.weight_to_weight_map[i]));
+                fprintf(file, "c     %u = %f+%fi\n", expr.LITERALS+1+i,
+                    get_probability(expr.weight_to_weight_map[i]).real(),
+                    get_probability(expr.weight_to_weight_map[i]).imag()
+                );
         } else {
             for(unsigned int i = 0; i < weight_to_probability.size(); i++)
-                fprintf(file, "c     %u = %f\n", expr.LITERALS+1+i, weight_to_probability[i]);
+                fprintf(file, "c     %u = %f+%fi\n", expr.LITERALS+1+i,
+                    weight_to_probability[i].real(),
+                    weight_to_probability[i].imag()
+                );
         }
 
         fprintf(file, "c\nc variable-to-literal mapping:\n");
@@ -660,7 +735,7 @@ void expression::print(){
     printf(" =================================================\n");
     for(unsigned int i = 0; i < clauses.size(); i++){
         printf(" %3u: p%-4d ", i, clauses[i].w);
-        if(clauses[i].w == -1)
+        if(clauses[i].w == NOT_WEIGHTED)
             printf(" NONE ");
         else printf("    ?: ");
 
@@ -835,12 +910,12 @@ void cnf::encode_determinism(){
     // 1. remove weights that correspond to probability 0
     vector <probability_t> w_to_p;
     map< int, int > w_to_w;
-    w_to_w[-1] = -1;
+    w_to_w[NOT_WEIGHTED] = NOT_WEIGHTED;
     for(unsigned int i = 0; i < expr.clauses.size(); i++){
         weight_t &w = expr.clauses[i].w;
         probability_t p = get_probability(i);
-        if(p == 0)
-            w = -1;
+        if(p == 0.0)
+            w = NOT_WEIGHTED;
         else if(w_to_w.find(w) == w_to_w.end()){
             w_to_w[w] = w_to_p.size();
             w_to_p.push_back(p);
@@ -852,17 +927,17 @@ void cnf::encode_determinism(){
 
     // 2. remove all clauses with probability 1
     w_to_w.clear(); w_to_p.clear();
-    w_to_w[-1] = -1;
+    w_to_w[NOT_WEIGHTED] = NOT_WEIGHTED;
     for(unsigned int i = 0; i < expr.clauses.size(); i++){
         weight_t w = expr.clauses[i].w;
         probability_t p = get_probability(i);
-        if(p != 1 && w_to_w.find(w) == w_to_w.end()){
+        if(p != 1.0 && w_to_w.find(w) == w_to_w.end()){
             w_to_w[w] = w_to_p.size();
             w_to_p.push_back(p);
         }
     }
     for(unsigned int i = 0; i < expr.clauses.size(); i++){
-        if(get_probability(i) == 1){
+        if(get_probability(i) == 1.0){
             expr.clauses.erase(expr.clauses.begin()+i);
             expr.clause_to_variable.erase(expr.clause_to_variable.begin()+i);
             i--;
@@ -880,14 +955,14 @@ void cnf::encode_deterministic_probabilities(){
 
     int d[2] = { 0 };
     map< int, int > w_to_w;
-    w_to_w[-1] = -1;
+    w_to_w[NOT_WEIGHTED] = NOT_WEIGHTED;
     for(unsigned int i = 0; i < expr.clauses.size(); i++){
         weight_t w = expr.clauses[i].w;
         probability_t p = get_probability(i);
 
-        if(p == 0 || p == 1){
-            w_to_w[w] = (weight_t) p;
-            d[(weight_t) p] = 1;
+        if(p == 0.0 || p == 1.0){
+            w_to_w[w] = (weight_t) p.real();
+            d[(weight_t) p.real()] = 1;
         } else if(w_to_w.find(w) == w_to_w.end()){
             w_to_w[w] = w_to_p.size();
             w_to_p.push_back(p);
@@ -906,6 +981,12 @@ void cnf::encode_deterministic_probabilities(){
     expr.WEIGHTS = weight_to_probability.size();
 }
 
+struct cmpComplex {
+    bool operator()(const complex<double>& a, const complex<double>& b) const {
+        return abs(a)+arg(a) < abs(b)+arg(b);
+    }
+};
+
 void cnf::encode_equal_probabilities(){
     map< unsigned, vector<unsigned int> > variable_to_clause;
     for(unsigned int i = 0; i < expr.clause_to_variable.size(); i++)
@@ -915,12 +996,13 @@ void cnf::encode_equal_probabilities(){
     for(unsigned int v = 0; v < VARIABLES; v++){
         vector<unsigned int> &cpt_clause = variable_to_clause[v];
 
-        map< probability_t, vector<int> > probability_to_clause;
+        map< probability_t, vector<int>, cmpComplex > probability_to_clause;
         for(unsigned int idx = 0; idx < cpt_clause.size(); idx++){
             unsigned int i = cpt_clause[idx];
             probability_t p = get_probability(i);
-            if(p >= 0)
-                probability_to_clause[p].push_back(i);
+            if(p != (double)NOT_WEIGHTED) {
+              probability_to_clause[p].push_back(i);
+            }
         }
         for(auto it = probability_to_clause.begin(); it != probability_to_clause.end(); it++){
             unsigned int pid = p_to_w.size();
@@ -1068,9 +1150,14 @@ void cnf::encode_prime(){
 
                 // print current clause group
                 printf("(%u/%u) probability: ", v, VARIABLES);
-                if(mit->first==-1)
+                if(mit->first==NOT_WEIGHTED) {
                     printf("NONE  probability: NONE   ");
-                else printf("%-4d  probability: %-.3f  ", expr.LITERALS+1+mit->first, weight_to_probability[mit->first]);
+                } else {
+                    printf("%-4d  probability: %f+%fi  ", expr.LITERALS+1+mit->first,
+                        weight_to_probability[mit->first].real(),
+                        weight_to_probability[mit->first].imag()
+                    );
+                }
                 printf("literals: %-4d  clauses: %-4d\n", l_to_i.size(), mit->second.size());
 
                 // print participating clauses
@@ -1198,9 +1285,9 @@ void cnf::print(){
 
     for(unsigned int i = 0; i < expr.clauses.size(); i++){
         printf(" %3u: p%-4d v%-4u ", i, expr.clauses[i].w, expr.clause_to_variable[i]);
-        if(get_probability(i) == -1)
+        if(get_probability(i) == (double)NOT_WEIGHTED)
             printf(" NONE: ");
-        else printf("%.3f: ", get_probability(i));
+        else printf("%f+%fi: ", get_probability(i).real(), get_probability(i).imag());
 
         for(unsigned int j = 0; j < expr.clauses[i].literals.size(); j++){
             bool pauze = !signbit(expr.clauses[i].literals[j]);
@@ -1235,4 +1322,3 @@ expression_t* cnf::get_expression(int i) const {
 unsigned int cnf::get_nr_expressions() const{
     return exprs.size();
 }
-
