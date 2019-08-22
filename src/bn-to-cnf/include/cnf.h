@@ -17,8 +17,10 @@ typedef uint32_t variable_t;
 typedef literal_t weight_t;
 typedef uint8_t bool_t;
 
+const weight_t NOT_WEIGHTED = INT32_MIN;
+
 struct clause {
-    clause() { w = -1; };
+    clause() { w = NOT_WEIGHTED; };
 
     inline bool weighted(){ return w >= 0; };
     weight_t w;
@@ -159,4 +161,3 @@ class cnf {
 };
 
 #endif
-
