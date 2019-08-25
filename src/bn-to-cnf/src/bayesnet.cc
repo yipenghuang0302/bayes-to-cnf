@@ -114,7 +114,7 @@ void dynamic_bayesnet::print(){
 }
 
 void dynamic_bayesnet::finalize(){
-    wcc();
+    // wcc();
 
     parent_size = 0;
     child_size = 0;
@@ -483,4 +483,3 @@ void bayesnet::set_filename(const char *f){
 const char* bayesnet::get_filename(){
     return filename.c_str();
 }
-

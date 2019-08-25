@@ -405,7 +405,7 @@ int cnf::write(const char* outfile, int i){
                 if ( abs(real)>256 && imag==0 ) { // if it's a hash value
                     fprintf(file, "cc$C$%u$%d$+$\n", expr.LITERALS+1+i, int(real));
                 } else {
-                    fprintf(file, "cc$C$%u$%f+%fi$+$\n", expr.LITERALS+1+i, real, imag);
+                    fprintf(file, "cc$C$%u$%.8f+%.8fi$+$\n", expr.LITERALS+1+i, real, imag);
                 }
             }
         } else {
@@ -416,7 +416,7 @@ int cnf::write(const char* outfile, int i){
                 if ( abs(real)>256 && imag==0 ) { // if it's a hash value
                     fprintf(file, "cc$C$%u$%d$+$\n", expr.LITERALS+1+i, int(real));
                 } else {
-                    fprintf(file, "cc$C$%u$%f+%fi$+$\n", expr.LITERALS+1+i, real, imag);
+                    fprintf(file, "cc$C$%u$%.8f+%.8fi$+$\n", expr.LITERALS+1+i, real, imag);
                 }
             }
         }
@@ -430,13 +430,13 @@ int cnf::write(const char* outfile, int i){
 
         if(expr.is_mapped()){
             for(unsigned int i = 0; i < expr.weight_to_weight_map.size(); i++)
-                fprintf(file, "c     %u = %f+%fi\n", expr.LITERALS+1+i,
+                fprintf(file, "c     %u = %.8f+%.8fi\n", expr.LITERALS+1+i,
                     get_probability(expr.weight_to_weight_map[i]).real(),
                     get_probability(expr.weight_to_weight_map[i]).imag()
                 );
         } else {
             for(unsigned int i = 0; i < weight_to_probability.size(); i++)
-                fprintf(file, "c     %u = %f+%fi\n", expr.LITERALS+1+i,
+                fprintf(file, "c     %u = %.8f+%.8fi\n", expr.LITERALS+1+i,
                     weight_to_probability[i].real(),
                     weight_to_probability[i].imag()
                 );
@@ -1153,7 +1153,7 @@ void cnf::encode_prime(){
                 if(mit->first==NOT_WEIGHTED) {
                     printf("NONE  probability: NONE   ");
                 } else {
-                    printf("%-4d  probability: %f+%fi  ", expr.LITERALS+1+mit->first,
+                    printf("%-4d  probability: %.8f+%.8fi  ", expr.LITERALS+1+mit->first,
                         weight_to_probability[mit->first].real(),
                         weight_to_probability[mit->first].imag()
                     );
@@ -1287,7 +1287,7 @@ void cnf::print(){
         printf(" %3u: p%-4d v%-4u ", i, expr.clauses[i].w, expr.clause_to_variable[i]);
         if(get_probability(i) == (double)NOT_WEIGHTED)
             printf(" NONE: ");
-        else printf("%f+%fi: ", get_probability(i).real(), get_probability(i).imag());
+        else printf("%.8f+%.8fi: ", get_probability(i).real(), get_probability(i).imag());
 
         for(unsigned int j = 0; j < expr.clauses[i].literals.size(); j++){
             bool pauze = !signbit(expr.clauses[i].literals[j]);
