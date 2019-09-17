@@ -337,8 +337,22 @@ int cnf::write(const char* outfile, int i){
                 counter++;
         }
 
-        fprintf(file, "p cnf %u %u\n", expr.LITERALS+expr.WEIGHTS, counter);
-        for(unsigned int i = 0; i < expr.clauses.size(); i++){
+        fprintf(file, "p cnf %u %u\n", expr.LITERALS+expr.WEIGHTS, counter-VARIABLES);
+        fprintf(file, "eclauses %u\n", VARIABLES);
+        for(unsigned int i = expr.LITERALS; i < expr.clauses.size(); i++){
+            if(!OPT_SYMPLIFY || get_probability(i,expr) != 1.0){
+                clause &c = expr.clauses[i];
+                for(unsigned int j = 0; j < c.literals.size(); j++)
+                    fprintf(file, "%d ", c.literals[j]);
+
+                if(get_probability(i,expr) != ((double)NOT_WEIGHTED) && (!OPT_SYMPLIFY || get_probability(i,expr) != 0.0)) {
+                    fprintf(file, "%u ", expr.LITERALS+1+c.w);
+                }
+
+                fprintf(file,"0\n");
+            }
+        }
+        for(unsigned int i = 0; i < VARIABLES; i++){
             if(!OPT_SYMPLIFY || get_probability(i,expr) != 1.0){
                 clause &c = expr.clauses[i];
                 for(unsigned int j = 0; j < c.literals.size(); j++)
@@ -484,7 +498,7 @@ int cnf::write(const char *extra){
         name += ".";
         name += extra;
     }
-    name += ".cnf";
+    name += ".net.cnf";
 
     if(write(name.c_str(),-1) == 0)
         printf("\nDIMACS CNF written to: %s\n\n", name.c_str());
@@ -498,13 +512,13 @@ int cnf::write(const char *extra){
                 name = prefix + ".";
             if(extra)
                  name += extra;
-            name += "." + to_string(v) + ".cnf";
+            name += "." + to_string(v) + ".net.cnf";
             if(write(name.c_str(), v) != 0){
                 printf("Could not write to: %s\n\n", name.c_str());
                 return 1;
             }
         }
-        printf("Partitioned DIMACS CNF written to: %s.*.cnf\n\n", prefix.c_str());
+        printf("Partitioned DIMACS CNF written to: %s.*.net.cnf\n\n", prefix.c_str());
     }
     return 0;
 }
