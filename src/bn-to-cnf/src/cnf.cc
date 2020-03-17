@@ -331,13 +331,13 @@ int cnf::write(const char* outfile, int i){
         }
         fprintf(file, "c ===================================================\n");
         unsigned int counter = 0;
-        for(unsigned int i = 0; i < expr.clauses.size(); i++){
+        for(unsigned int i = expr.LITERALS; i < expr.clauses.size(); i++){
             probability_t p = get_probability(i,expr);
             if(!OPT_SYMPLIFY || p != 1.0)
                 counter++;
         }
 
-        fprintf(file, "p cnf %u %u\n", expr.LITERALS+expr.WEIGHTS, counter-VARIABLES);
+        fprintf(file, "p cnf %u %u\n", expr.LITERALS+expr.WEIGHTS, counter+VARIABLES);
         fprintf(file, "eclauses %u\n", VARIABLES);
         for(unsigned int i = expr.LITERALS; i < expr.clauses.size(); i++){
             if(!OPT_SYMPLIFY || get_probability(i,expr) != 1.0){
