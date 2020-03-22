@@ -338,7 +338,7 @@ int cnf::write(const char* outfile, int i){
         }
 
         fprintf(file, "p cnf %u %u\n", expr.LITERALS+expr.WEIGHTS, counter+VARIABLES);
-        fprintf(file, "eclauses %u\n", VARIABLES);
+        if (!OPT_BOOL) {fprintf(file, "eclauses %u\n", VARIABLES);}
         for(unsigned int i = expr.LITERALS; i < expr.clauses.size(); i++){
             if(!OPT_SYMPLIFY || get_probability(i,expr) != 1.0){
                 clause &c = expr.clauses[i];
