@@ -369,7 +369,7 @@ int cnf::write(const char* outfile, int i){
         fprintf(file, "c ===================================================\n");
         fprintf(file, "c Following is the literal map:\n");
         fprintf(file, "c\n");
-        fprintf(file, "cc$K$ALWAYS_SUM\n");
+        fprintf(file, "cc$K$SOMETIMES_SUM_SOMETIMES_MAX\n");
         fprintf(file, "cc$S$NORMAL\n");
         fprintf(file, "cc$N$%u\n", expr.LITERALS+expr.WEIGHTS);
         if(bn){
@@ -383,24 +383,24 @@ int cnf::write(const char* outfile, int i){
                     if(OPT_BOOL && expr.values[v] == 2) {
                         fprintf(
                             file,
-                            "cc$I$-%u$1.0$+$%s$%u\n",
+                            "cc$I$-%u$1.0$X$%s$%u\n",
                             expr.variable_to_literal[v]+l,
                             bn->get_node_name(old_variable).c_str(),
                             0
                         );
                         fprintf(
                             file,
-                            "cc$I$%u$1.0$+$%s$%u\n",
+                            "cc$I$%u$1.0$X$%s$%u\n",
                             expr.variable_to_literal[v]+l,
                             bn->get_node_name(old_variable).c_str(),
                             1
                         );
                         break;
                     } else {
-                        fprintf(file, "cc$C$-%u$1.0$+$\n",expr.variable_to_literal[v]+l);
+                        fprintf(file, "cc$C$-%u$1.0$X$\n",expr.variable_to_literal[v]+l);
                         fprintf(
                             file,
-                            "cc$I$%u$1.0$+$%s$%u\n",
+                            "cc$I$%u$1.0$X$%s$%u\n",
                             expr.variable_to_literal[v]+l,
                             bn->get_node_name(old_variable).c_str(),
                             l
@@ -413,24 +413,24 @@ int cnf::write(const char* outfile, int i){
         // cc$T$q1n$2
         if(expr.is_mapped()){
             for(unsigned int i = 0; i < expr.weight_to_weight_map.size(); i++) {
-                fprintf(file, "cc$C$-%u$1.0$+$\n", expr.LITERALS+1+i);
+                fprintf(file, "cc$C$-%u$1.0$X$\n", expr.LITERALS+1+i);
                 double real = get_probability(expr.weight_to_weight_map[i]).real();
                 double imag = get_probability(expr.weight_to_weight_map[i]).imag();
                 if ( abs(real)>256 && imag==0 ) { // if it's a hash value
-                    fprintf(file, "cc$C$%u$%d$+$\n", expr.LITERALS+1+i, int(real));
+                    fprintf(file, "cc$C$%u$%d$X$\n", expr.LITERALS+1+i, int(real));
                 } else {
-                    fprintf(file, "cc$C$%u$%.8f+%.8fi$+$\n", expr.LITERALS+1+i, real, imag);
+                    fprintf(file, "cc$C$%u$%.8f+%.8fi$X$\n", expr.LITERALS+1+i, real, imag);
                 }
             }
         } else {
             for(unsigned int i = 0; i < weight_to_probability.size(); i++) {
-                fprintf(file, "cc$C$-%u$1.0$+$\n", expr.LITERALS+1+i);
+                fprintf(file, "cc$C$-%u$1.0$X$\n", expr.LITERALS+1+i);
                 double real = weight_to_probability[i].real();
                 double imag = weight_to_probability[i].imag();
                 if ( abs(real)>256 && imag==0 ) { // if it's a hash value
-                    fprintf(file, "cc$C$%u$%d$+$\n", expr.LITERALS+1+i, int(real));
+                    fprintf(file, "cc$C$%u$%d$X$\n", expr.LITERALS+1+i, int(real));
                 } else {
-                    fprintf(file, "cc$C$%u$%.8f+%.8fi$+$\n", expr.LITERALS+1+i, real, imag);
+                    fprintf(file, "cc$C$%u$%.8f+%.8fi$X$\n", expr.LITERALS+1+i, real, imag);
                 }
             }
         }
