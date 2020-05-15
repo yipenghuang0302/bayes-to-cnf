@@ -369,7 +369,7 @@ int cnf::write(const char* outfile, int i){
         fprintf(file, "c ===================================================\n");
         fprintf(file, "c Following is the literal map:\n");
         fprintf(file, "c\n");
-        fprintf(file, "cc$K$SOMETIMES_SUM_SOMETIMES_MAX\n");
+        fprintf(file, "cc$K$ALWAYS_SUM\n");
         fprintf(file, "cc$S$NORMAL\n");
         fprintf(file, "cc$N$%u\n", expr.LITERALS+expr.WEIGHTS);
         if(bn){
