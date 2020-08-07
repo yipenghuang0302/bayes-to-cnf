@@ -129,7 +129,7 @@ int main(int argc, char **argv){
         if(stats)
             f.stats();
 
-        // f.print();
+        f.print();
         delete bn;
     }
 
