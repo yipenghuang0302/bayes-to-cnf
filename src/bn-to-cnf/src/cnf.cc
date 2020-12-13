@@ -332,14 +332,17 @@ int cnf::write(const char* outfile, int i){
         fprintf(file, "c ===================================================\n");
         unsigned int counter = 0;
         for(unsigned int i = expr.LITERALS; i < expr.clauses.size(); i++){
+        // for(unsigned int i = 0; i < expr.clauses.size(); i++){
             probability_t p = get_probability(i,expr);
             if(!OPT_SYMPLIFY || p != 1.0)
                 counter++;
         }
 
         fprintf(file, "p cnf %u %u\n", expr.LITERALS+expr.WEIGHTS, counter+VARIABLES);
+        // fprintf(file, "p cnf %u %u\n", expr.LITERALS+expr.WEIGHTS, counter);
         if (!OPT_BOOL && !OPT_SUPPRESS_CONSTRAINTS) {fprintf(file, "eclauses %u\n", VARIABLES);}
         for(unsigned int i = expr.LITERALS; i < expr.clauses.size(); i++){
+        // for(unsigned int i = 0; i < expr.clauses.size(); i++){
             if(!OPT_SYMPLIFY || get_probability(i,expr) != 1.0){
                 clause &c = expr.clauses[i];
                 for(unsigned int j = 0; j < c.literals.size(); j++)
@@ -370,7 +373,7 @@ int cnf::write(const char* outfile, int i){
         fprintf(file, "c Following is the literal map:\n");
         fprintf(file, "c\n");
         fprintf(file, "cc$K$ALWAYS_SUM\n");
-        fprintf(file, "cc$S$NORMAL\n");
+        fprintf(file, "cc$S$LOG_E\n");
         fprintf(file, "cc$N$%u\n", expr.LITERALS+expr.WEIGHTS);
         if(bn){
             fprintf(file, "cc$v$%u\n", expr.get_nr_variables());
